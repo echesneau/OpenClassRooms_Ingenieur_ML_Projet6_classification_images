@@ -10,10 +10,12 @@ Code to use the CNN developped to predict the dog breed
 import sys
 import os
 import argparse
+import pickle
 import numpy as np
 
-from tensorflow import expand_dims
-from tensorflow import keras, nn
+import tensorflow as tf
+#from tensorflow import expand_dims
+
 #from tensorflow.keras import layers
 #from tensorflow import data
 
@@ -27,25 +29,38 @@ if __name__ == '__main__' :
     parser.add_argument('--ifile', '-i', \
                         help="Path to the image which we want to use for the prediction")
     parser.add_argument('--model', '-m',\
-                        help="Neural network model (tensorflow format)")
+                        help="Neural network model (tensorflow format)",
+                        default="final_model/weights_last_dense.27-0.7832.h5")
+    parser.add_argument('--labels', '-l',\
+                        help="Labels class names",\
+                        default='final_model/class_names.pkl')
+    parser.add_argument('--verbose', '-v',\
+                        help="Verbose mode",\
+                        action="store_true")
     args = parser.parse_args()
 
     #===========================
     # Download model
     #===========================
-    MODEL = ""
-    #lire la taille des image
-    HEIGHT = 0
-    WIDTH = 0
-
+    MODEL = tf.keras.models.load_model(args.model)
+    config = MODEL.get_config()
+    _, HEIGHT, WIDTH, DEPTH = config['layers'][0]['config']['batch_input_shape']
+    if args.verbose :
+        print(f"input shape = ({HEIGHT}, {WIDTH}, {DEPTH})")
+    with open(args.labels, 'rb') as f :
+        class_names = pickle.load(f)
+    if args.verbose :
+        print(f"Number of class : {len(class_names)}")
     #===========================
     # Image preprocessing
     #===========================
     if os.path.isfile(args.ifile) :
         #image_path = tf.keras.utils.get_file('Red_sunflower', origin=sunflower_url)
-        img = keras.utils.load_img(args.ifile, target_size=(HEIGHT, WIDTH))
-        img_array = keras.utils.img_to_array(img)
-        img_array = expand_dims(img_array, 0)
+        img = tf.keras.utils.load_img(args.ifile, target_size=(HEIGHT, WIDTH))
+        img_array = tf.keras.utils.img_to_array(img)
+        img_array = tf.expand_dims(img_array, 0)
+        if args.verbose :
+            print(f"Image shape = {img_array.shape}")
     else :
         print(f"Error : {args.ifile} is not a file")
         sys.exit()
@@ -53,9 +68,13 @@ if __name__ == '__main__' :
     # Prediction
     #===========================
     predictions = MODEL.predict(img_array)
-    score = nn.softmax(predictions[0])
+    if args.verbose : 
+        print(f"Prediction shape = {predictions.shape}")
     #===========================
     # Print result
     #===========================
-    print(f"This image most likely belongs to {class_names[np.argmax(score)]} " + \
-          f"with a {100 * np.max(score):.2f} percent confidence.")
+    print("="*(10+len("Results")+2))
+    print("|"+" "*5+"Results"+" "*5+'|')
+    print("="*(10+len("Results")+2))
+    print(f"This image most likely belongs to {class_names[np.argmax(predictions[0])]} " + \
+          f"with a {100 * np.max(predictions[0]):.2f} percent confidence.")
