@@ -12,12 +12,7 @@ import os
 import argparse
 import pickle
 import numpy as np
-
 import tensorflow as tf
-#from tensorflow import expand_dims
-
-#from tensorflow.keras import layers
-#from tensorflow import data
 
 if __name__ == '__main__' :
     #===========================
@@ -55,7 +50,6 @@ if __name__ == '__main__' :
     # Image preprocessing
     #===========================
     if os.path.isfile(args.ifile) :
-        #image_path = tf.keras.utils.get_file('Red_sunflower', origin=sunflower_url)
         img = tf.keras.utils.load_img(args.ifile, target_size=(HEIGHT, WIDTH))
         img_array = tf.keras.utils.img_to_array(img)
         img_array = tf.expand_dims(img_array, 0)
@@ -68,7 +62,7 @@ if __name__ == '__main__' :
     # Prediction
     #===========================
     predictions = MODEL.predict(img_array)
-    if args.verbose : 
+    if args.verbose :
         print(f"Prediction shape = {predictions.shape}")
     #===========================
     # Print result
